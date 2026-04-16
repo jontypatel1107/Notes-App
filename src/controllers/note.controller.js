@@ -202,10 +202,98 @@ const replaceNote = async (req, res) => {
   }
 };
 
+const updateNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const body = req.body || {};
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid note ID',
+        data: null,
+      });
+    }
+
+    const allowedFields = ['title', 'content', 'category', 'isPinned'];
+    const hasProvidedField = allowedFields.some((field) =>
+      Object.prototype.hasOwnProperty.call(body, field)
+    );
+
+    if (!hasProvidedField) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields provided to update',
+        data: null,
+      });
+    }
+
+    const updates = {};
+
+    if (Object.prototype.hasOwnProperty.call(body, 'title')) {
+      const normalizedTitle = typeof body.title === 'string' ? body.title.trim() : body.title;
+      if (!normalizedTitle) {
+        return res.status(400).json({
+          success: false,
+          message: 'Title cannot be empty',
+          data: null,
+        });
+      }
+      updates.title = normalizedTitle;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, 'content')) {
+      const normalizedContent = typeof body.content === 'string' ? body.content.trim() : body.content;
+      if (!normalizedContent) {
+        return res.status(400).json({
+          success: false,
+          message: 'Content cannot be empty',
+          data: null,
+        });
+      }
+      updates.content = normalizedContent;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, 'category')) {
+      updates.category = body.category;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, 'isPinned')) {
+      updates.isPinned = body.isPinned;
+    }
+
+    const updatedNote = await Note.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedNote) {
+      return res.status(404).json({
+        success: false,
+        message: 'Note not found',
+        data: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Note updated successfully',
+      data: updatedNote,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   createNote,
   createBulkNotes,
   getAllNotes,
   getNoteById,
   replaceNote,
+  updateNote,
 };
