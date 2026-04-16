@@ -289,6 +289,42 @@ const updateNote = async (req, res) => {
   }
 };
 
+const deleteNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid note ID',
+        data: null,
+      });
+    }
+
+    const deletedNote = await Note.findByIdAndDelete(id);
+
+    if (!deletedNote) {
+      return res.status(404).json({
+        success: false,
+        message: 'Note not found',
+        data: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Note deleted successfully',
+      data: null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   createNote,
   createBulkNotes,
@@ -296,4 +332,5 @@ module.exports = {
   getNoteById,
   replaceNote,
   updateNote,
+  deleteNote,
 };
