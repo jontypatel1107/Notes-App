@@ -35,6 +35,59 @@ const createNote = async (req, res) => {
   }
 };
 
+const createBulkNotes = async (req, res) => {
+  try {
+    const notes = req.body?.notes;
+
+    if (!Array.isArray(notes) || notes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Notes array is required',
+        data: null,
+      });
+    }
+
+    const normalizedNotes = notes.map((note) => {
+      const title = typeof note?.title === 'string' ? note.title.trim() : note?.title;
+      const content = typeof note?.content === 'string' ? note.content.trim() : note?.content;
+
+      if (!title || !content) {
+        return null;
+      }
+
+      return {
+        title,
+        content,
+        category: note?.category,
+        isPinned: note?.isPinned,
+      };
+    });
+
+    if (normalizedNotes.some((note) => note === null)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and content are required',
+        data: null,
+      });
+    }
+
+    const createdNotes = await Note.insertMany(normalizedNotes);
+
+    return res.status(201).json({
+      success: true,
+      message: `${createdNotes.length} notes created successfully`,
+      data: createdNotes,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   createNote,
+  createBulkNotes,
 };
